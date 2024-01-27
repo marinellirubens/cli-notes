@@ -161,7 +161,7 @@ func main() {
 			},
 			{
 				Name:  "export",
-				Usage: "Gets a note from the list",
+				Usage: "Exports all notes to a file",
 				Action: func(cCtx *cli.Context) error {
 					fileExport := cCtx.String("output")
 					//check if file exists
@@ -200,7 +200,7 @@ func main() {
 			},
 			{
 				Name:  "import",
-				Usage: "Gets a note from the list",
+				Usage: "imports file with notes exported with export command",
 				Action: func(cCtx *cli.Context) error {
 					fileImport := cCtx.String("input")
 					//check if file exists
