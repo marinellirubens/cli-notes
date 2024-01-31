@@ -3,5 +3,5 @@ run:
 compile:
 	go build -o build/notes golang_notes.go
 install:
-	cp -f ./build/notes /usr/local/bin
+	go install
 
