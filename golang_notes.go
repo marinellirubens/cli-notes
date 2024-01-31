@@ -14,6 +14,7 @@ import (
 
 var HOME string
 
+// Reads a note from the directory ~/.notes
 func read_note(filename string) error {
 	fullPath := HOME + "/" + filename
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
@@ -21,7 +22,7 @@ func read_note(filename string) error {
 		return err
 	}
 
-	//read note from file
+	// read note from file
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		log.Fatal(err)
@@ -31,6 +32,7 @@ func read_note(filename string) error {
 	return nil
 }
 
+// Returns the user home directory
 func get_user_home() string {
 	user, err := user.Current()
 	if err != nil {
@@ -39,6 +41,7 @@ func get_user_home() string {
 	return user.HomeDir
 }
 
+// Deletes a note from the directory ~/.notes
 func detele_note(filename string) error {
 	fullPath := HOME + "/" + filename
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
@@ -55,19 +58,21 @@ func detele_note(filename string) error {
 	return nil
 }
 
+// Initializes the directory ~/.notes
 func init() {
-	//check if directory exists
-	var path = get_user_home() + "/.notes"
+	// check if directory exists
+	path := get_user_home() + "/.notes"
 	HOME = path
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		//create directory
+		// create directory
 		if err := os.Mkdir(path, os.ModePerm); err != nil {
 			log.Fatal(err)
 		}
 	}
 }
 
+// Reads the stdin content
 func get_stdin() []byte {
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -85,6 +90,7 @@ func get_stdin() []byte {
 	return nil
 }
 
+// Initializes the editor with the note name
 func init_editor(note_name string) error {
 	if note_name == "" {
 		fmt.Println("No note name provided")
@@ -109,8 +115,9 @@ func init_editor(note_name string) error {
 	return nil
 }
 
+// Lists all notes on the directory ~/.notes
 func list_notes(cCtx *cli.Context) error {
-	//list all notes on directory ~/.notes
+	// list all notes on directory ~/.notes
 	files, err := os.ReadDir(get_user_home() + "/.notes")
 	if err != nil {
 		return err
@@ -130,7 +137,6 @@ func main() {
 				Name:  "add",
 				Usage: "Adds a note to the list",
 				Action: func(cCtx *cli.Context) error {
-
 					init_editor(cCtx.Args().First())
 					fmt.Println("added task: ", cCtx.Args().First())
 					return nil
@@ -164,7 +170,7 @@ func main() {
 				Usage: "Exports all notes to a file",
 				Action: func(cCtx *cli.Context) error {
 					fileExport := cCtx.String("output")
-					//check if file exists
+					// check if file exists
 					if _, err := os.Stat(fileExport); err == nil {
 						fmt.Println("File " + fileExport + " already exists")
 						return nil
@@ -174,7 +180,7 @@ func main() {
 						log.Fatal(err)
 					}
 					os.Chdir(get_user_home())
-					//create zip file with all notes from ~/.notes
+					// create zip file with all notes from ~/.notes
 					cmd := exec.Command("zip", "-r", ".notes.zip", ".notes")
 					cmd.Stdout = os.Stdout
 					cmd.Stderr = os.Stderr
@@ -203,23 +209,23 @@ func main() {
 				Usage: "imports file with notes exported with export command",
 				Action: func(cCtx *cli.Context) error {
 					fileImport := cCtx.String("input")
-					//check if file exists
+					// check if file exists
 					if _, err := os.Stat(fileImport); os.IsNotExist(err) {
 						fmt.Println("File " + fileImport + " does not exists")
 						return nil
 					}
 
-					//create zip file with all notes from ~/.notes
-					//fmt.Println("unzip", "-o", fileImport, "-d", HOME)
+					// create zip file with all notes from ~/.notes
+					// fmt.Println("unzip", "-o", fileImport, "-d", HOME)
 					cmd := exec.Command("unzip", "-o", fileImport, "-d", get_user_home())
-					//cmd.Stdout = os.Stdout
+					// cmd.Stdout = os.Stdout
 					cmd.Stderr = os.Stderr
 					cmd.Stdin = os.Stdin
 					err := cmd.Run()
 					if err != nil {
 						log.Fatal(err)
 					}
-					//create zip file with all notes from ~/.notes
+					// create zip file with all notes from ~/.notes
 					fmt.Println(cCtx.String("input"))
 					return nil
 				},
