@@ -16,6 +16,11 @@ var HOME string
 
 // Reads a note from the directory ~/.notes
 func read_note(filename string) error {
+	if filename == "" {
+		list_notes(nil)
+		return nil
+	}
+
 	fullPath := HOME + "/" + filename
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		fmt.Println("Note not found")
