@@ -7,5 +7,5 @@ compile:
 install:
 	cp -f ./completions/fish/notes.fish /usr/share/fish/completions/notes.fish
 	cp -f ./completions/zsh/_notes /usr/share/zsh/site-functions/_notes
-	go install
+	cp -f ./build/notes /usr/bin/notes
 

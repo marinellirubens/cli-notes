@@ -205,6 +205,7 @@ func list_notes(cCtx *cli.Context) error {
 	// list all notes on directory ~/.notes
 	files, err := os.ReadDir(get_user_home() + "/.notes")
 	if err != nil {
+		log.Fatal(err)
 		return err
 	}
 	if len(files) == 0 {
