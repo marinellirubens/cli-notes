@@ -1,8 +1,10 @@
 package main
 
 import (
+	"archive/zip"
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -13,6 +15,84 @@ import (
 )
 
 var HOME string
+
+func zipSource(source, target string) error {
+	currDir, _ := os.Getwd()
+	os.Chdir(get_user_home())
+	tempZipName := ".notes.zip"
+	// 1. Create a ZIP file and zip.Writer
+	f, err := os.Create(tempZipName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	writer := zip.NewWriter(f)
+	defer writer.Close()
+
+	files, err := os.ReadDir(HOME)
+	if err != nil {
+		log.Fatal("Error trying to read folder", err)
+		return err
+	}
+	// filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+	for _, file := range files {
+		path := filepath.Join(".notes", file.Name())
+		fmt.Println(path)
+		if err != nil {
+			log.Fatal("Error trying to read folder", err)
+			continue
+		}
+		info, err := file.Info()
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			log.Fatal("Error trying to create file header", err)
+			continue
+		}
+		fmt.Println(header.Name)
+
+		// set compression
+		header.Method = zip.Deflate
+
+		// 5. Create writer for the file header and save content of the file
+		headerWriter, err := writer.CreateHeader(header)
+		if err != nil {
+			continue
+		}
+
+		if info.IsDir() {
+			continue
+		}
+		fmt.Println(path)
+
+		f, err := os.Open(path)
+		if err != nil {
+			log.Fatal("Error trying to open file", err)
+			continue
+		}
+		defer f.Close()
+		// fmt.Println(headerWriter)
+		_, err = io.Copy(headerWriter, f)
+		if err != nil {
+			log.Fatal("Error trying to copy file", err)
+			continue
+		}
+	}
+	os.Chdir(currDir)
+	os.Rename(filepath.Join(get_user_home(), tempZipName), target)
+	return nil
+}
+
+func zipFolder(cCtx *cli.Context) error {
+	fileExport := cCtx.String("output")
+	if err := zipSource(HOME, fileExport); err != nil {
+		log.Fatal(err)
+		return err
+	}
+	fmt.Println("Notes exported to file " + cCtx.String("output"))
+	return nil
+}
 
 // Reads a note from the directory ~/.notes
 func read_note(filename string) error {
@@ -127,6 +207,11 @@ func list_notes(cCtx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	if len(files) == 0 {
+		fmt.Println("No notes found")
+		return nil
+	}
+
 	fmt.Println("Notes:")
 	for _, f := range files {
 		fmt.Println("	" + f.Name())
@@ -171,35 +256,9 @@ func main() {
 				},
 			},
 			{
-				Name:  "export",
-				Usage: "Exports all notes to a file",
-				Action: func(cCtx *cli.Context) error {
-					fileExport := cCtx.String("output")
-					// check if file exists
-					if _, err := os.Stat(fileExport); err == nil {
-						fmt.Println("File " + fileExport + " already exists")
-						return nil
-					}
-					currDir, err := os.Getwd()
-					if err != nil {
-						log.Fatal(err)
-					}
-					os.Chdir(get_user_home())
-					// create zip file with all notes from ~/.notes
-					cmd := exec.Command("zip", "-r", ".notes.zip", ".notes")
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					cmd.Stdin = os.Stdin
-					err = cmd.Run()
-					if err != nil {
-						log.Fatal(err)
-					}
-					os.Chdir(currDir)
-					os.Rename(filepath.Join(get_user_home(), ".notes.zip"), fileExport)
-
-					fmt.Println("Notes exported to file " + cCtx.String("output"))
-					return nil
-				},
+				Name:   "export",
+				Usage:  "Exports all notes to a file",
+				Action: zipFolder,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "output",
