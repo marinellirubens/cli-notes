@@ -1,0 +1,80 @@
+#compdef notes
+
+local ret=1
+local commands; commands=(
+'add:Create/Edit a note with file name'
+'delete:delete a note by file name'
+'export:Export notes to a zip file'
+'get:Print the content of a note by file name'
+'help:Show help.'
+'import:Import notes from a zip file'
+'list:List notes By default'
+'version:Show application version.'
+)
+
+_arguments \
+  "1: :{_describe 'command' commands}" \
+  '*:: :->args'
+
+case $state in
+    args)
+        local common_flags; common_flags=(
+        '--help[Show context-sensitive help]'
+        '-h[Show context-sensitive help]'
+        '--version[Show application version]'
+        )
+        case $words[1] in
+            version)
+                _arguments \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+            help)
+                _arguments \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+            add)
+                 local names; names=(
+                'filename:name of the note'
+                )
+                _arguments \
+                    "1: :{_describe 'name' names}" \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+            list)
+                _arguments \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+            detele)
+                _arguments \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+            get)
+                _arguments \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+            export)
+                _arguments \
+                    '--output[file to be user as output]' \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+            import)
+                _arguments \
+                    '--input[file to be user as input]' \
+                    ${common_flags[@]} \
+                    && ret=0
+            ;;
+        esac
+    ;;
+    *)
+        ret=0
+    ;;
+esac
+
+return $ret
