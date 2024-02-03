@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	cli "github.com/urfave/cli/v2"
 )
@@ -84,13 +85,73 @@ func zipSource(source, target string) error {
 	return nil
 }
 
-func zipFolder(cCtx *cli.Context) error {
+func exportNotes(cCtx *cli.Context) error {
 	fileExport := cCtx.String("output")
 	if err := zipSource(HOME, fileExport); err != nil {
 		log.Fatal(err)
 		return err
 	}
 	fmt.Println("Notes exported to file " + cCtx.String("output"))
+	return nil
+}
+
+func inportNotes(cCtx *cli.Context) error {
+	fileImport := cCtx.String("input")
+	currDir, _ := os.Getwd()
+	// check if file exists
+	if _, err := os.Stat(fileImport); os.IsNotExist(err) {
+		fmt.Println("File " + fileImport + " does not exists")
+		return nil
+	}
+	os.Chdir(get_user_home())
+
+	dst := ".notes"
+	archive, err := zip.OpenReader(fileImport)
+	if err != nil {
+		panic(err)
+	}
+	if err := os.MkdirAll(dst, os.ModePerm); err != nil {
+		panic(err)
+	}
+	defer archive.Close()
+
+	for _, f := range archive.File {
+		filePath := filepath.Join(dst, f.Name)
+		fmt.Println("unzipping file ", filePath)
+
+		if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
+			fmt.Println("invalid file path")
+			return
+		}
+		if f.FileInfo().IsDir() {
+			fmt.Println("creating directory...")
+			os.MkdirAll(filePath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			panic(err)
+		}
+
+		dstFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			panic(err)
+		}
+
+		fileInArchive, err := f.Open()
+		if err != nil {
+			panic(err)
+		}
+
+		if _, err := io.Copy(dstFile, fileInArchive); err != nil {
+			panic(err)
+		}
+
+		dstFile.Close()
+		fileInArchive.Close()
+	}
+	os.Chdir(currDir)
+	// os.Rename(filepath.Join(get_user_home(), tempZipName), target)
 	return nil
 }
 
@@ -259,7 +320,7 @@ func main() {
 			{
 				Name:   "export",
 				Usage:  "Exports all notes to a file",
-				Action: zipFolder,
+				Action: exportNotes,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "output",
@@ -270,30 +331,9 @@ func main() {
 				},
 			},
 			{
-				Name:  "import",
-				Usage: "imports file with notes exported with export command",
-				Action: func(cCtx *cli.Context) error {
-					fileImport := cCtx.String("input")
-					// check if file exists
-					if _, err := os.Stat(fileImport); os.IsNotExist(err) {
-						fmt.Println("File " + fileImport + " does not exists")
-						return nil
-					}
-
-					// create zip file with all notes from ~/.notes
-					// fmt.Println("unzip", "-o", fileImport, "-d", HOME)
-					cmd := exec.Command("unzip", "-o", fileImport, "-d", get_user_home())
-					// cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					cmd.Stdin = os.Stdin
-					err := cmd.Run()
-					if err != nil {
-						log.Fatal(err)
-					}
-					// create zip file with all notes from ~/.notes
-					fmt.Println(cCtx.String("input"))
-					return nil
-				},
+				Name:   "import",
+				Usage:  "imports file with notes exported with export command",
+				Action: inportNotes,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "input",

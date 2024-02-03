@@ -6,10 +6,16 @@ I've used to use bash_alias for this, but I've decided to create a simple comman
 ## Installation
 To install notes, you can use the following command:
 ```bash
+$ make compile 
 $ make install
 ```
 
 ## Usage
+To use notes, you can use directly from the command line. Since it will be deployed to /usr/local/bin, you can use it from anywhere in the command line.
+
+The notes will be stored in a folder called .notes in your home directory.
+
+the following commands are available:
 ```bash
 $ notes --help
 NAME:
