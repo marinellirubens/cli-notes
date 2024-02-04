@@ -39,7 +39,7 @@ func zipSource(source, target string) error {
 	// filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 	for _, file := range files {
 		path := filepath.Join(".notes", file.Name())
-		fmt.Println(path)
+		// fmt.Println(path)
 		if err != nil {
 			log.Fatal("Error trying to read folder", err)
 			continue
@@ -51,7 +51,7 @@ func zipSource(source, target string) error {
 			log.Fatal("Error trying to create file header", err)
 			continue
 		}
-		fmt.Println(header.Name)
+		// fmt.Println(header.Name)
 
 		// set compression
 		header.Method = zip.Deflate
@@ -65,7 +65,7 @@ func zipSource(source, target string) error {
 		if info.IsDir() {
 			continue
 		}
-		fmt.Println(path)
+		// fmt.Println(path)
 
 		f, err := os.Open(path)
 		if err != nil {
@@ -103,13 +103,13 @@ func inportNotes(cCtx *cli.Context) error {
 		fmt.Println("File " + fileImport + " does not exists")
 		return nil
 	}
-	os.Chdir(get_user_home())
 
 	dst := ".notes"
 	archive, err := zip.OpenReader(fileImport)
 	if err != nil {
 		panic(err)
 	}
+	os.Chdir(get_user_home())
 	if err := os.MkdirAll(dst, os.ModePerm); err != nil {
 		panic(err)
 	}
@@ -117,14 +117,14 @@ func inportNotes(cCtx *cli.Context) error {
 
 	for _, f := range archive.File {
 		filePath := filepath.Join(dst, f.Name)
-		fmt.Println("unzipping file ", filePath)
+		// fmt.Println("unzipping file ", filePath)
 
 		if !strings.HasPrefix(filePath, filepath.Clean(dst)+string(os.PathSeparator)) {
 			fmt.Println("invalid file path")
-			return
+			return nil
 		}
 		if f.FileInfo().IsDir() {
-			fmt.Println("creating directory...")
+			// fmt.Println("creating directory...")
 			os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}
