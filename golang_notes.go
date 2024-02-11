@@ -17,7 +17,7 @@ import (
 
 var HOME string
 
-const VERSION = "1.0.0"
+const VERSION = "1.0.1"
 
 func zipSource(source, target string) error {
 	currDir, _ := os.Getwd()
@@ -260,6 +260,7 @@ func init_editor(note_name string) error {
 		log.Fatal(err)
 		return err
 	}
+	fmt.Println("added task: ", note_name)
 	return nil
 }
 
@@ -307,9 +308,8 @@ func main() {
 				Name:  "add",
 				Usage: "Adds a note to the list",
 				Action: func(cCtx *cli.Context) error {
-					init_editor(cCtx.Args().First())
-					fmt.Println("added task: ", cCtx.Args().First())
-					return nil
+					err := init_editor(cCtx.Args().First())
+					return err
 				},
 			},
 			{
