@@ -17,7 +17,7 @@ import (
 
 var HOME string
 
-const VERSION = "1.0.1"
+const VERSION = "1.0.2"
 
 func zipSource(source, target string) error {
 	currDir, _ := os.Getwd()
@@ -244,6 +244,13 @@ func init_editor(note_name string) error {
 		fmt.Println("No note name provided")
 		return nil
 	}
+	note_path := HOME + "/" + note_name
+	file_exists := true
+	// check if file exists
+	if _, err := os.Stat(note_path); os.IsNotExist(err) {
+		file_exists = false
+	}
+
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		editor = "vim"
@@ -260,7 +267,13 @@ func init_editor(note_name string) error {
 		log.Fatal(err)
 		return err
 	}
-	fmt.Println("added task: ", note_name)
+
+	if file_exists {
+		fmt.Println("modified task: ", note_name, file_exists)
+		return nil
+	}
+
+	fmt.Println("added task: ", note_name, file_exists)
 	return nil
 }
 
