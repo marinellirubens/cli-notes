@@ -17,6 +17,8 @@ import (
 
 var HOME string
 
+const VERSION = "1.0.0"
+
 func zipSource(source, target string) error {
 	currDir, _ := os.Getwd()
 	os.Chdir(get_user_home())
@@ -284,6 +286,22 @@ func list_notes(cCtx *cli.Context) error {
 func main() {
 	app := &cli.App{
 		EnableBashCompletion: true,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "version",
+				Aliases: []string{"v"},
+				Value:   false,
+				Usage:   "Prints the current version of the application",
+			},
+		},
+		Action: func(cCtx *cli.Context) error {
+			if cCtx.Bool("version") {
+				fmt.Println("Version: ", VERSION)
+				return nil
+			}
+			ret := cCtx.App.Command("help").Run(cCtx)
+			return ret
+		},
 		Commands: []*cli.Command{
 			{
 				Name:  "add",
