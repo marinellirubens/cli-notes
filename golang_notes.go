@@ -88,11 +88,9 @@ func zipSource(source string, target string) error {
 	if err != nil {
 		log.Fatal("Error trying to get directory", err)
 	}
-	targePat := filepath.Dir(target)
-
-	err = os.Rename(filepath.Join(get_user_home(), tempZipName), filepath.Join(targePat, target))
+	err = os.Rename(filepath.Join(get_user_home(), tempZipName), target)
 	if err != nil {
-		log.Print("not able to move file : " + filepath.Join(targePat, target))
+		log.Print("not able to move file : " + target)
 		return err
 	}
 	return nil
