@@ -21,10 +21,11 @@ const VERSION = "1.0.2"
 
 func zipSource(source string, target string) error {
 	currDir, _ := os.Getwd()
-	err := os.Chdir(get_user_home())
-	if err != nil {
+	log.Print("current directory" + currDir)
+	if err := os.Chdir(get_user_home()); err != nil {
 		return err
 	}
+	log.Print("changing directory to " + get_user_home())
 
 	tempZipName := ".notes.zip"
 	// 1. Create a ZIP file and zip.Writer
@@ -34,6 +35,7 @@ func zipSource(source string, target string) error {
 	}
 	defer f.Close()
 
+	log.Print("creating temporary file " + tempZipName)
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
@@ -86,8 +88,13 @@ func zipSource(source string, target string) error {
 	if err != nil {
 		log.Fatal("Error trying to get directory", err)
 	}
+	targePat := filepath.Dir(target)
 
-	_ = os.Rename(filepath.Join(get_user_home(), tempZipName), target)
+	err = os.Rename(filepath.Join(get_user_home(), tempZipName), filepath.Join(targePat, target))
+	if err != nil {
+		log.Print("not able to move file : " + filepath.Join(targePat, target))
+		return err
+	}
 	return nil
 }
 
@@ -337,9 +344,10 @@ func main() {
 				},
 			},
 			{
-				Name:   "list",
-				Usage:  "Lists all notes",
-				Action: list_notes,
+				Name:    "list",
+				Aliases: []string{"l"},
+				Usage:   "Lists all notes",
+				Action:  list_notes,
 			},
 			{
 				Name:  "get",
