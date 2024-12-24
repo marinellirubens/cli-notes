@@ -19,9 +19,13 @@ var HOME string
 
 const VERSION = "1.0.2"
 
-func zipSource(source, target string) error {
+func zipSource(source string, target string) error {
 	currDir, _ := os.Getwd()
-	os.Chdir(get_user_home())
+	err := os.Chdir(get_user_home())
+	if err != nil {
+		return err
+	}
+
 	tempZipName := ".notes.zip"
 	// 1. Create a ZIP file and zip.Writer
 	f, err := os.Create(tempZipName)
@@ -33,25 +37,22 @@ func zipSource(source, target string) error {
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
-	files, err := os.ReadDir(HOME)
+	files, err := os.ReadDir(source)
 	if err != nil {
 		log.Fatal("Error trying to read folder", err)
-		return err
 	}
 	// filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
 	for _, file := range files {
 		path := filepath.Join(".notes", file.Name())
-		// fmt.Println(path)
-		if err != nil {
-			log.Fatal("Error trying to read folder", err)
-			continue
-		}
+		fmt.Println(path)
 		info, err := file.Info()
+		if err != nil {
+			log.Fatal("Error trying to file", err)
+		}
 
 		header, err := zip.FileInfoHeader(info)
 		if err != nil {
 			log.Fatal("Error trying to create file header", err)
-			continue
 		}
 		// fmt.Println(header.Name)
 
@@ -72,18 +73,21 @@ func zipSource(source, target string) error {
 		f, err := os.Open(path)
 		if err != nil {
 			log.Fatal("Error trying to open file", err)
-			continue
 		}
 		defer f.Close()
 		// fmt.Println(headerWriter)
 		_, err = io.Copy(headerWriter, f)
 		if err != nil {
 			log.Fatal("Error trying to copy file", err)
-			continue
 		}
 	}
-	os.Chdir(currDir)
-	os.Rename(filepath.Join(get_user_home(), tempZipName), target)
+
+	err = os.Chdir(currDir)
+	if err != nil {
+		log.Fatal("Error trying to get directory", err)
+	}
+
+	_ = os.Rename(filepath.Join(get_user_home(), tempZipName), target)
 	return nil
 }
 
@@ -111,7 +115,7 @@ func inportNotes(cCtx *cli.Context) error {
 	if err != nil {
 		panic(err)
 	}
-	os.Chdir(get_user_home())
+	_ = os.Chdir(get_user_home())
 	if err := os.MkdirAll(dst, os.ModePerm); err != nil {
 		panic(err)
 	}
@@ -127,7 +131,7 @@ func inportNotes(cCtx *cli.Context) error {
 		}
 		if f.FileInfo().IsDir() {
 			// fmt.Println("creating directory...")
-			os.MkdirAll(filePath, os.ModePerm)
+			_ = os.MkdirAll(filePath, os.ModePerm)
 			continue
 		}
 
@@ -152,7 +156,7 @@ func inportNotes(cCtx *cli.Context) error {
 		dstFile.Close()
 		fileInArchive.Close()
 	}
-	os.Chdir(currDir)
+	_ = os.Chdir(currDir)
 	// os.Rename(filepath.Join(get_user_home(), tempZipName), target)
 	return nil
 }
@@ -160,7 +164,7 @@ func inportNotes(cCtx *cli.Context) error {
 // Reads a note from the directory ~/.notes
 func read_note(filename string) error {
 	if filename == "" {
-		list_notes(nil)
+		_ = list_notes(nil)
 		return nil
 	}
 
@@ -174,7 +178,6 @@ func read_note(filename string) error {
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		log.Fatal(err)
-		return err
 	}
 	fmt.Println(string(data))
 	return nil
@@ -200,7 +203,6 @@ func detele_note(filename string) error {
 	err := os.Remove(fullPath)
 	if err != nil {
 		log.Fatal(err)
-		return err
 	}
 	fmt.Println("Note " + filename + " deleted")
 	return nil
@@ -255,8 +257,7 @@ func init_editor(note_name string) error {
 	if editor == "" {
 		editor = "vim"
 	}
-	var cmd string
-	cmd = editor + " " + get_user_home() + "/.notes/" + note_name
+	cmd := editor + " " + get_user_home() + "/.notes/" + note_name
 	cmd_exec := exec.Command("sh", "-c", cmd)
 	cmd_exec.Stdout = os.Stdout
 	cmd_exec.Stderr = os.Stderr
@@ -265,7 +266,6 @@ func init_editor(note_name string) error {
 	err := cmd_exec.Run()
 	if err != nil {
 		log.Fatal(err)
-		return err
 	}
 
 	if file_exists {
@@ -283,7 +283,6 @@ func list_notes(cCtx *cli.Context) error {
 	files, err := os.ReadDir(get_user_home() + "/.notes")
 	if err != nil {
 		log.Fatal(err)
-		return err
 	}
 	if len(files) == 0 {
 		fmt.Println("No notes found")
@@ -330,7 +329,9 @@ func main() {
 				Usage: "Deletes a note from the list",
 				Action: func(cCtx *cli.Context) error {
 					for _, arg := range cCtx.Args().Slice() {
-						detele_note(arg)
+						if err := detele_note(arg); err != nil {
+							return err
+						}
 					}
 					return nil
 				},
@@ -344,7 +345,9 @@ func main() {
 				Name:  "get",
 				Usage: "Gets a note from the list",
 				Action: func(cCtx *cli.Context) error {
-					read_note(cCtx.Args().First())
+					if err := read_note(cCtx.Args().First()); err != nil {
+						return err
+					}
 					return nil
 				},
 			},
